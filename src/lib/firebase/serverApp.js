@@ -1,30 +1,34 @@
-// enforces that this code can only be called on the server
-// https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns#keeping-server-only-code-out-of-the-client-environment
+// Ensure this module is only used in a server-side environment.
+// This avoids accidentally exposing sensitive logic to client code.
 import "server-only";
 
+// Import the server-side cookie API and Firebase app initialization helpers.
 import { cookies } from "next/headers";
 import { initializeServerApp, initializeApp } from "firebase/app";
 
+// Import the Firebase Auth helper used to access the authenticated user state.
 import { getAuth } from "firebase/auth";
 
-// Returns an authenticated client SDK instance for use in Server Side Rendering
-// and Static Site Generation
+// Create a Firebase app instance that is authenticated with the current user's session cookie.
 export async function getAuthenticatedAppForUser() {
+  // Read the session cookie that stores the user's ID token from the client-side auth flow.
   const authIdToken = (await cookies()).get("__session")?.value;
 
-  // Firebase Server App is a new feature in the JS SDK that allows you to
-  // instantiate the SDK with credentials retrieved from the client & has
-  // other affordances for use in server environments.
+  // Initialize a Firebase server app using the default app settings and the current auth token.
   const firebaseServerApp = initializeServerApp(
-    // https://github.com/firebase/firebase-js-sdk/issues/8863#issuecomment-2751401913
+    // Create a default Firebase app instance for the server environment.
     initializeApp(),
     {
+      // Attach the user's auth ID token so Firebase can restore the correct session.
       authIdToken,
     }
   );
 
+  // Get the Firebase Auth instance associated with the server app.
   const auth = getAuth(firebaseServerApp);
+  // Wait for Firebase Auth to finish restoring the current user state.
   await auth.authStateReady();
 
+  // Return the server app and the currently authenticated user.
   return { firebaseServerApp, currentUser: auth.currentUser };
 }

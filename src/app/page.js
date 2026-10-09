@@ -1,27 +1,33 @@
+// Import the restaurant listing component.
 import RestaurantListings from "@/src/components/RestaurantListings.jsx";
+// Import the restaurant fetch helper.
 import { getRestaurants } from "@/src/lib/firebase/firestore.js";
+// Import the server-side Firebase helper.
 import { getAuthenticatedAppForUser } from "@/src/lib/firebase/serverApp.js";
+// Import the Firestore helper.
 import { getFirestore } from "firebase/firestore";
 
-// Force next.js to treat this route as server-side rendered
-// Without this line, during the build process, next.js will treat this route as static and build a static HTML file for it
-
+// Force Next.js to render this route dynamically.
 export const dynamic = "force-dynamic";
 
-// This line also forces this route to be server-side rendered
-// export const revalidate = 0;
-
+// Define the home page component.
 export default async function Home(props) {
+  // Read the incoming query parameters.
   const searchParams = await props.searchParams;
-  // Using seachParams which Next.js provides, allows the filtering to happen on the server-side, for example:
-  // ?city=London&category=Indian&sort=Review
+  // Create an authenticated server-side Firebase app.
   const { firebaseServerApp } = await getAuthenticatedAppForUser();
+  // Fetch restaurants using the active filters.
   const restaurants = await getRestaurants(
+    // Get the Firestore database instance.
     getFirestore(firebaseServerApp),
+    // Pass the current query parameters.
     searchParams
   );
+  // Return the page layout.
   return (
+    // Render the main page container.
     <main className="main__home">
+      {/* Render the restaurant listings component. */}
       <RestaurantListings
         initialRestaurants={restaurants}
         searchParams={searchParams}
