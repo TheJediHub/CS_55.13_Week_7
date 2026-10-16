@@ -53,43 +53,33 @@ export async function addReviewToRestaurant(db, restaurantId, review) {
 
 // Apply any requested filters to a query.
 function applyQueryFilters(q, { category, city, price, sort }) {
-  // Filter by category when provided.
   if (category) {
     q = query(q, where("category", "==", category));
   }
-  // Filter by city when provided.
   if (city) {
     q = query(q, where("city", "==", city));
   }
-  // Filter by price when provided.
   if (price) {
     q = query(q, where("price", "==", price.length));
   }
-  // Sort by rating by default.
   if (sort === "Rating" || !sort) {
     q = query(q, orderBy("avgRating", "desc"));
   } else if (sort === "Review") {
-    // Sort by review count when selected.
     q = query(q, orderBy("numRatings", "desc"));
   }
-  // Return the filtered query.
   return q;
 }
 
-// Fetch all matching restaurants.
 export async function getRestaurants(db = db, filters = {}) {
-  // Start with the restaurants collection query.
   let q = query(collection(db, "restaurants"));
 
-  // Apply the current filters.
   q = applyQueryFilters(q, filters);
-  // Get the matching restaurant documents.
   const results = await getDocs(q);
-  // Return plain objects for the client.
   return results.docs.map((doc) => {
     return {
       id: doc.id,
       ...doc.data(),
+      // Only plain objects can be passed to Client Components from Server Components
       timestamp: doc.data().timestamp.toDate(),
     };
   });
@@ -97,52 +87,42 @@ export async function getRestaurants(db = db, filters = {}) {
 
 // Set up a live restaurant snapshot listener.
 export function getRestaurantsSnapshot(cb, filters = {}) {
-  // Validate the callback first.
   if (typeof cb !== "function") {
     console.log("Error: The callback parameter is not a function");
     return;
   }
 
-  // Create the filtered restaurant query.
   let q = query(collection(db, "restaurants"));
-  // Apply the current filters.
   q = applyQueryFilters(q, filters);
 
-  // Listen for Firestore changes.
   return onSnapshot(q, (querySnapshot) => {
-    // Map each snapshot item to plain objects.
     const results = querySnapshot.docs.map((doc) => {
       return {
         id: doc.id,
         ...doc.data(),
+        // Only plain objects can be passed to Client Components from Server Components
         timestamp: doc.data().timestamp.toDate(),
       };
     });
 
-    // Pass the latest list to the callback.
     cb(results);
   });
 }
 
 // Listen for updates to one restaurant.
 export function getRestaurantSnapshotById(restaurantId, cb) {
-  // Validate the restaurant ID.
   if (!restaurantId) {
     console.log("Error: Invalid ID received: ", restaurantId);
     return;
   }
 
-  // Validate the callback.
   if (typeof cb !== "function") {
     console.log("Error: The callback parameter is not a function");
     return;
   }
 
-  // Create the document reference.
   const docRef = doc(db, "restaurants", restaurantId);
-  // Subscribe to document updates.
   return onSnapshot(docRef, (docSnap) => {
-    // Send the restaurant object to the callback.
     cb({
       ...docSnap.data(),
       timestamp: docSnap.data().timestamp.toDate(),
@@ -151,10 +131,10 @@ export function getRestaurantSnapshotById(restaurantId, cb) {
 }
 
 // Keep the older stub for compatibility.
-export function getRestaurantSnapshotById(restaurantId, cb) {
+// export function getRestaurantSnapshotById(restaurantId, cb) {
   // This stub is kept for compatibility.
-  return;
-}
+ // return;
+// }
 
 // Fetch reviews for a restaurant.
 export async function getReviewsByRestaurantId(db, restaurantId) {
